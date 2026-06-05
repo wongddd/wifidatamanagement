@@ -1,0 +1,82 @@
+{
+  "messages": {
+    "app": {
+      "title": "Hotel WiFi Billing & Management",
+      "shortTitle": "WiFi Manager"
+    },
+    "menu": {
+      "dashboard": "Dashboard",
+      "tenants": "Tenants",
+      "hotels": "Hotels",
+      "members": "Members",
+      "packages": "Packages",
+      "billing": "Billing",
+      "rechargeCards": "Recharge Cards",
+      "devices": "Devices",
+      "reports": "Reports"
+    },
+    "common": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "create": "Create",
+      "search": "Search",
+      "refresh": "Refresh",
+      "export": "Export",
+      "confirm": "Confirm",
+      "back": "Back",
+      "submit": "Submit",
+      "success": "Success",
+      "fail": "Failed",
+      "loading": "Loading...",
+      "noData": "No Data",
+      "total": "Total {total} items",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "enable": "Enabled",
+      "disable": "Disabled",
+      "normal": "Normal",
+      "online": "Online",
+      "offline": "Offline",
+      "error": "Error",
+      "active": "Active",
+      "finished": "Finished"
+    },
+    "package": {
+      "timePackage": "Time-based",
+      "trafficPackage": "Traffic-based",
+      "hybridPackage": "Hybrid",
+      "unlimited": "Unlimited",
+      "price": "Price(¥)",
+      "duration": "Duration",
+      "trafficQuota": "Traffic Quota",
+      "maxDevices": "Max Devices"
+    },
+    "billing": {
+      "onlineUsers": "Online Users",
+      "kickUser": "Kick",
+      "todayRevenue": "Today Revenue",
+      "todayTraffic": "Today Traffic",
+      "recharge": "Recharge",
+      "balance": "Balance"
+    },
+    "device": {
+      "testConnection": "Test Connection",
+      "syncConfig": "Sync Config",
+      "mikrotik": "MikroTik",
+      "huawei": "Huawei",
+      "h3c": "H3C"
+    },
+    "login": {
+      "title": "Login",
+      "username": "Username",
+      "password": "Password",
+      "tenantId": "Tenant ID",
+      "loginBtn": "Sign In",
+      "success": "Login Successful"
+    }
+  }
+}

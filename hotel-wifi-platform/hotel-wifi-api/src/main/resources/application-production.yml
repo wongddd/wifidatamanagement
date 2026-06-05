@@ -1,0 +1,70 @@
+# =============================================
+# 生产环境配置
+# 启动: java -jar app.jar --spring.profiles.active=production
+# =============================================
+
+server:
+  port: 8080
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 20
+    accept-count: 100
+    max-connections: 10000
+
+spring:
+  datasource:
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 50
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      leak-detection-threshold: 60000
+      connection-test-query: SELECT 1
+      pool-name: HotelWifiHikariCP
+      # 读写分离从库 (如果有)
+      # read-only: jdbc:mysql://mysql-slave:3306/hotel_wifi?...
+  data:
+    redis:
+      host: redis-cluster
+      port: 6379
+      lettuce:
+        pool:
+          max-active: 32
+          max-idle: 16
+          min-idle: 8
+
+# JWT 生产密钥（务必修改为随机字符串，至少256bit）
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000
+
+# 计费配置
+billing:
+  poll-interval-seconds: 30
+  deduct-interval-seconds: 60
+  prepaid-amount: 0.5
+
+# 日志
+logging:
+  level:
+    root: WARN
+    com.alenwifidata: INFO
+  file:
+    path: /app/logs
+    name: /app/logs/hotel-wifi.log
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      max-history: 30
+
+# 管理端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized

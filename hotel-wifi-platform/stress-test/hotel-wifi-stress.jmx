@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="酒店WiFi计费系统压力测试" enabled="true">
+      <stringProp name="TestPlan.comments">测试目标: 验证1000并发在线会话下的系统性能</stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="BASE_URL" elementType="Argument">
+            <stringProp name="Argument.name">BASE_URL</stringProp>
+            <stringProp name="Argument.value">localhost:8080</stringProp>
+          </elementProp>
+          <elementProp name="TOKEN" elementType="Argument">
+            <stringProp name="Argument.name">TOKEN</stringProp>
+            <stringProp name="Argument.value"></stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+    </TestPlan>
+
+    <hashTree>
+      <!-- 线程组1: 登录获取Token -->
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="登录-1个线程" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+      </ThreadGroup>
+      <hashTree>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST Login" enabled="true">
+          <stringProp name="HTTPSampler.domain">${BASE_URL}</stringProp>
+          <stringProp name="HTTPSampler.port">8080</stringProp>
+          <stringProp name="HTTPSampler.path">/api/v1/auth/login</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <stringProp name="TestPlan.comments">登录获取JWT Token，提取token到变量</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header">
+            <collectionProp name="HeaderManager.headers">
+              <elementProp name="" elementType="Header">
+                <stringProp name="Header.name">Content-Type</stringProp>
+                <stringProp name="Header.value">application/json</stringProp>
+              </elementProp>
+            </collectionProp>
+          </HeaderManager>
+          <RegexExtractor guiclass="RegexExtractorGui" testclass="RegexExtractor" testname="提取Token">
+            <stringProp name="RegexExtractor.refname">TOKEN</stringProp>
+            <stringProp name="RegexExtractor.regex">"token":"([^"]+)"</stringProp>
+            <stringProp name="RegexExtractor.template">$1$</stringProp>
+            <stringProp name="RegexExtractor.match_number">1</stringProp>
+          </RegexExtractor>
+        </hashTree>
+      </hashTree>
+
+      <!-- 线程组2: 并发查询在线用户 (100线程) -->
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="在线用户查询-100并发" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <intProp name="LoopController.loops">10</intProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">100</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">10</stringProp>
+        <stringProp name="ThreadGroup.duration">60</stringProp>
+      </ThreadGroup>
+      <hashTree>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET Active Sessions" enabled="true">
+          <stringProp name="HTTPSampler.domain">${BASE_URL}</stringProp>
+          <stringProp name="HTTPSampler.path">/api/v1/billing/sessions/active</stringProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager">
+            <collectionProp name="HeaderManager.headers">
+              <elementProp name="" elementType="Header">
+                <stringProp name="Header.name">Authorization</stringProp>
+                <stringProp name="Header.value">Bearer ${TOKEN}</stringProp>
+              </elementProp>
+            </collectionProp>
+          </HeaderManager>
+        </hashTree>
+      </hashTree>
+
+      <!-- 线程组3: 并发创建订单 (50线程) -->
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="创建订单-50并发" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <intProp name="LoopController.loops">5</intProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">50</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">5</stringProp>
+      </ThreadGroup>
+      <hashTree>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST Create Order" enabled="true">
+          <stringProp name="HTTPSampler.domain">${BASE_URL}</stringProp>
+          <stringProp name="HTTPSampler.path">/api/v1/billing/orders</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <stringProp name="HTTPSampler.arguments">{"hotelId":1,"memberId":${__Random(1,100)},"packageId":1,"payType":"BALANCE"}</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager">
+            <collectionProp name="HeaderManager.headers">
+              <elementProp name="" elementType="Header">
+                <stringProp name="Header.name">Authorization</stringProp>
+                <stringProp name="Header.value">Bearer ${TOKEN}</stringProp>
+              </elementProp>
+            </collectionProp>
+          </HeaderManager>
+        </hashTree>
+      </hashTree>
+
+      <!-- 结果收集 -->
+      <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="查看结果树" enabled="false"/>
+      <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="聚合报告" enabled="true">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <objProp><name>saveConfig</name><value class="SampleSaveConfiguration">
+          <time>true</time><latency>true</latency><timestamp>true</timestamp>
+          <success>true</success><label>true</label><code>true</code><message>true</message>
+          <threadName>true</threadName><dataType>true</dataType><encoding>false</encoding>
+          <assertions>true</assertions><subresults>true</subresults><responseData>false</responseData>
+          <samplerData>false</samplerData><xml>true</xml><fieldNames>true</fieldNames>
+          <responseHeaders>false</responseHeaders><requestHeaders>false</requestHeaders>
+          <responseDataOnError>false</responseDataOnError><saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+          <assertionsResultsToSave>0</assertionsResultsToSave><bytes>true</bytes><sentBytes>true</sentBytes>
+          <url>true</url><threadCounts>true</threadCounts>
+        </value></objProp>
+      </ResultCollector>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

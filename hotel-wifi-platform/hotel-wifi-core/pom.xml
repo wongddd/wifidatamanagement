@@ -73,6 +73,18 @@
             <artifactId>okhttp</artifactId>
         </dependency>
 
+        <!-- TinyRadius (RADIUS 协议) -->
+        <dependency>
+            <groupId>org.tinyradius</groupId>
+            <artifactId>tinyradius</artifactId>
+        </dependency>
+
+        <!-- SNMP4J (SNMP 设备监控) -->
+        <dependency>
+            <groupId>org.snmp4j</groupId>
+            <artifactId>snmp4j</artifactId>
+        </dependency>
+
         <!-- ShedLock -->
         <dependency>
             <groupId>net.javacrumbs.shedlock</groupId>

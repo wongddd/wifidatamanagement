@@ -1,0 +1,82 @@
+{
+  "messages": {
+    "app": {
+      "title": "酒店WiFi管理计费系统",
+      "shortTitle": "WiFi管理系统"
+    },
+    "menu": {
+      "dashboard": "首页",
+      "tenants": "租户管理",
+      "hotels": "酒店管理",
+      "members": "会员管理",
+      "packages": "套餐管理",
+      "billing": "计费管理",
+      "rechargeCards": "充值卡管理",
+      "devices": "设备管理",
+      "reports": "统计报表"
+    },
+    "common": {
+      "save": "保存",
+      "cancel": "取消",
+      "delete": "删除",
+      "edit": "编辑",
+      "create": "新增",
+      "search": "搜索",
+      "refresh": "刷新",
+      "export": "导出",
+      "confirm": "确认",
+      "back": "返回",
+      "submit": "提交",
+      "success": "操作成功",
+      "fail": "操作失败",
+      "loading": "加载中...",
+      "noData": "暂无数据",
+      "total": "共 {total} 条",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "status": {
+      "enable": "启用",
+      "disable": "停用",
+      "normal": "正常",
+      "online": "在线",
+      "offline": "离线",
+      "error": "异常",
+      "active": "活跃",
+      "finished": "已结束"
+    },
+    "package": {
+      "timePackage": "包时",
+      "trafficPackage": "包流量",
+      "hybridPackage": "混合",
+      "unlimited": "不限",
+      "price": "价格(元)",
+      "duration": "时长",
+      "trafficQuota": "流量配额",
+      "maxDevices": "最大设备数"
+    },
+    "billing": {
+      "onlineUsers": "实时在线用户",
+      "kickUser": "踢下线",
+      "todayRevenue": "今日收入",
+      "todayTraffic": "今日流量",
+      "recharge": "充值",
+      "balance": "余额"
+    },
+    "device": {
+      "testConnection": "测试连接",
+      "syncConfig": "同步配置",
+      "mikrotik": "MikroTik",
+      "huawei": "华为",
+      "h3c": "H3C"
+    },
+    "login": {
+      "title": "登录",
+      "username": "用户名",
+      "password": "密码",
+      "tenantId": "租户ID",
+      "loginBtn": "登录",
+      "success": "登录成功"
+    }
+  }
+}

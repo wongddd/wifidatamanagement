@@ -1,0 +1,26 @@
+# =============================================
+# Redis Cluster 集群模式配置
+# 启动: java -jar app.jar --spring.profiles.active=cluster
+# =============================================
+
+spring:
+  redis:
+    cluster:
+      nodes:
+        - redis-node1:6379
+        - redis-node2:6379
+        - redis-node3:6379
+        - redis-node4:6379
+        - redis-node5:6379
+        - redis-node6:6379
+      max-redirects: 3
+    lettuce:
+      pool:
+        max-active: 64
+        max-idle: 32
+        min-idle: 16
+
+logging:
+  level:
+    io.lettuce: WARN
+    org.springframework.data.redis: INFO
