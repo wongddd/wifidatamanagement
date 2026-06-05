@@ -50,6 +50,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '计费管理', icon: 'Money' },
       },
       {
+        path: 'recharge-cards',
+        name: 'RechargeCards',
+        component: () => import('@/views/billing/RechargeCardView.vue'),
+        meta: { title: '充值卡管理', icon: 'CreditCard' },
+      },
+      {
         path: 'devices',
         name: 'Devices',
         component: () => import('@/views/device/DeviceListView.vue'),

@@ -16,6 +16,7 @@ const menuItems = [
   { path: '/members', title: '会员管理', icon: 'User' },
   { path: '/packages', title: '套餐管理', icon: 'Goods' },
   { path: '/billing', title: '计费管理', icon: 'Money' },
+  { path: '/recharge-cards', title: '充值卡管理', icon: 'CreditCard' },
   { path: '/devices', title: '设备管理', icon: 'Monitor' },
   { path: '/reports', title: '统计报表', icon: 'DataAnalysis' },
 ]
