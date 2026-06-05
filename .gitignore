@@ -1,0 +1,28 @@
+# Java
+target/
+*.class
+*.jar
+*.war
+*.log
+.idea/
+*.iml
+.settings/
+.project
+.classpath
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+application-local.yml
+
+# Docker
+docker-compose.override.yml

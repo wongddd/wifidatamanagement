@@ -1,0 +1,30 @@
+// 全局样式
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #303133;
+}
+
+// Element Plus 菜单高度修正
+.el-menu {
+  border-right: none !important;
+}
+
+// 卡片通用样式
+.el-card {
+  margin-bottom: 0;
+}
+
+// 表格页通用样式
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
