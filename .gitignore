@@ -14,6 +14,11 @@ target/
 node_modules/
 dist/
 .vite/
+package-lock.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+hotel-wifi-frontend/auto-imports.d.ts
+hotel-wifi-frontend/components.d.ts
 
 # OS
 .DS_Store
