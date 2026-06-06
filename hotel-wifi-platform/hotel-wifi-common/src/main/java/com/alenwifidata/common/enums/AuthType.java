@@ -12,10 +12,8 @@ public enum AuthType {
 
     /** 用户名密码 */
     USERNAME_PASSWORD("账号密码"),
-    /** 微信扫码 */
-    WECHAT("微信认证"),
-    /** 短信验证码 */
-    SMS("短信认证"),
+    /** WhatsApp验证码 */
+    WHATSAPP("WhatsApp认证"),
     /** 充值卡 */
     CARD("充值卡");
 

@@ -37,14 +37,8 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/v1/auth/login",
                     "/api/v1/portal/**",
-                    "/api/v1/payment/wechat/notify",
-                    "/api/v1/payment/alipay/notify",
                     "/api/v1/payment/monnify/**",
-                    "/ws/**",
-                    "/v3/api-docs/**",
-                    "/doc.html",
-                    "/swagger-ui/**",
-                    "/webjars/**"
+                    "/ws/**"
                 ).permitAll()
                 // 其余需要认证
                 .anyRequest().authenticated()
