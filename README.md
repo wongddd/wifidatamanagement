@@ -142,7 +142,16 @@ docker-compose up -d
 - WebSocket: ws://localhost:8080/ws/dashboard
 - 默认账号: admin / admin123
 
-### 方式 2：本地开发
+### 方式 2：生产服务器部署
+
+```bash
+cd hotel-wifi-platform
+docker compose -f docker-compose.prod.yml up -d
+```
+
+> **演示服务器**: http://185.239.71.210:8080 (admin / admin123)
+
+### 方式 3：本地开发
 
 **后端：**
 ```bash
@@ -299,6 +308,8 @@ bash hotel-wifi-platform/stress-test/run-stress-test.sh
 - **Phase 1 ✅ 已完成** (`1104305`) — 项目骨架、多租户、会员/套餐 CRUD、计费引擎、MikroTik 客户端、Vue 管理后台、Docker 部署
 - **Phase 2 ✅ 已完成** (`92ce116`) — 短信认证、充值卡系统、WebSocket 实时推送、ECharts 收入趋势图、到期提醒、前端完整 CRUD 对话框
 - **Phase 3 ✅ 已完成** (`999eb6f`) — RADIUS 协议对接（1812/1813）、SNMP 设备监控、MySQL 分区优化、Redis Cluster/Sentinel、jpackage 安装包、vue-i18n 中英双语、JMeter 压力测试
+- **Phase 4 ✅ 已完成** (`c2f60b3`) — Portal住客认证前端（8页面）+ 后端API、在线支付（微信/支付宝）、住客个人中心、CardAuthProvider
+- **部署 ✅ 已完成** (`1e98a87`) — Docker Compose 生产部署到 CentOS 7、SSH 密钥登录、演示服务器 http://185.239.71.210:8080
 
 ## 工作规则
 
