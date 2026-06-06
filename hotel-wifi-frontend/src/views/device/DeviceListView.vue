@@ -47,14 +47,28 @@ async function handleSave() {
     ElMessage.success('设备已添加')
   }
   dialogVisible.value = false
-  loadData()
+  
+async function checkAgentStatus(id: number) {
+  try {
+    const res: any = await get(`/devices/relay/${id}/status`)
+    ElMessage.success(res.online ? 'Agent在线，命令可达' : 'Agent离线，无法远程管理')
+  } catch { ElMessage.error('检查失败') }
 }
+
+loadData()}
 
 async function handleDelete(row: any) {
   await del(`/devices/${row.id}`)
   ElMessage.success('设备已删除')
-  loadData()
+  
+async function checkAgentStatus(id: number) {
+  try {
+    const res: any = await get(`/devices/relay/${id}/status`)
+    ElMessage.success(res.online ? 'Agent在线，命令可达' : 'Agent离线，无法远程管理')
+  } catch { ElMessage.error('检查失败') }
 }
+
+loadData()}
 
 async function testConnection(id: number) {
   try {
@@ -63,8 +77,15 @@ async function testConnection(id: number) {
   } catch {
     ElMessage.error('连接测试失败')
   }
-  loadData()
+  
+async function checkAgentStatus(id: number) {
+  try {
+    const res: any = await get(`/devices/relay/${id}/status`)
+    ElMessage.success(res.online ? 'Agent在线，命令可达' : 'Agent离线，无法远程管理')
+  } catch { ElMessage.error('检查失败') }
 }
+
+loadData()}
 
 async function syncConfig(id: number) {
   try {
@@ -75,8 +96,15 @@ async function syncConfig(id: number) {
   }
 }
 
-loadData()
-</script>
+
+async function checkAgentStatus(id: number) {
+  try {
+    const res: any = await get(`/devices/relay/${id}/status`)
+    ElMessage.success(res.online ? 'Agent在线，命令可达' : 'Agent离线，无法远程管理')
+  } catch { ElMessage.error('检查失败') }
+}
+
+loadData()</script>
 
 <template>
   <el-card>
@@ -85,7 +113,14 @@ loadData()
     </template>
     <el-table :data="tableData" v-loading="loading" border stripe>
       <el-table-column prop="deviceName" label="设备名称" min-width="140" />
-      <el-table-column prop="host" label="IP/域名" width="150" />
+      <el-table-column label="模式" width="90">
+          <template #default="{ row }">
+            <el-tag :type="row.host?.startsWith('ws://') ? 'warning' : 'primary'" size="small">
+              {{ row.host?.startsWith('ws://') ? 'Agent' : '直连' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+<el-table-column prop="host" label="IP/域名" width="150" />
       <el-table-column prop="apiPort" label="端口" width="80" />
       <el-table-column prop="hotelId" label="酒店ID" width="80" />
       <el-table-column prop="hotspotServer" label="Hotspot Server" width="140" />
@@ -101,6 +136,7 @@ loadData()
           <el-button size="small" type="primary" link @click="handleEdit(row)">编辑</el-button>
           <el-button size="small" type="success" link @click="testConnection(row.id)">测试</el-button>
           <el-button size="small" type="warning" link @click="syncConfig(row.id)">同步</el-button>
+          <el-button size="small" type="info" link @click="checkAgentStatus(row.id)">Agent</el-button>
           <el-button size="small" type="danger" link @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
