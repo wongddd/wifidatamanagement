@@ -66,6 +66,12 @@ payment:
     secret-key: ${MONNIFY_SECRET_KEY:}
     contract-code: ${MONNIFY_CONTRACT_CODE:}
 
+# WhatsApp Cloud API 配置
+whatsapp:
+  api-url: https://graph.facebook.com
+  phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+  access-token: ${WHATSAPP_ACCESS_TOKEN:}
+
 # MikroTik 默认配置
 mikrotik:
   default-port: 8728
