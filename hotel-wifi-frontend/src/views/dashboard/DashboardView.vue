@@ -16,7 +16,6 @@ const stats = ref([
 
 // 图表实例
 let revenueChart: echarts.ECharts | null = null
-let trafficChart: echarts.ECharts | null = null
 
 watch(wsData, (val) => {
   if (val?.type === 'dashboard') {
@@ -73,7 +72,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   revenueChart?.dispose()
-  trafficChart?.dispose()
 })
 </script>
 

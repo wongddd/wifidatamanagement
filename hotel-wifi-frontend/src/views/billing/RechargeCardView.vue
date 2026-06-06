@@ -143,7 +143,7 @@ loadData()
     </el-dialog>
 
     <!-- 生成结果展示 -->
-    <el-dialog v-if="generatedCards.length" v-model="generatedCards.length > 0" title="生成结果" width="600px">
+    <el-dialog v-if="generatedCards.length" :model-value="generatedCards.length > 0" @update:model-value="generatedCards = []" title="生成结果" width="600px">
       <el-table :data="generatedCards" border stripe max-height="400">
         <el-table-column prop="cardNo" label="卡号" width="180" />
         <el-table-column prop="cardPassword" label="密码" width="120" />
