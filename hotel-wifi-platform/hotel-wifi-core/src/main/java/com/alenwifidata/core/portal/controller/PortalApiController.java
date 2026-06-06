@@ -17,6 +17,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,14 +48,19 @@ public class PortalApiController {
         return ApiResult.ok(packageMapper.selectList(wrapper));
     }
 
-    // ===== 认证入口 =====
+        // ===== 认证入口 =====
 
-    /** 账号密码认证 */
+    /** 账号密码认证 — 返回完整会员信息 */
     @PostMapping("/auth/username")
-    public ApiResult<AuthResult> authByUsername(@RequestBody AuthRequest request) {
+    public ApiResult<Map<String, Object>> authByUsername(@RequestBody AuthRequest request) {
         for (AuthProvider provider : authProviders) {
             if (provider.getType().name().equals("USERNAME_PASSWORD")) {
-                return ApiResult.ok(provider.authenticate(request));
+                AuthResult result = provider.authenticate(request);
+                if (!result.isSuccess()) {
+                    return ApiResult.fail(401, result.getMessage());
+                }
+                Long memberId = Long.parseLong(result.getUserId());
+                return ApiResult.ok(buildMemberInfo(memberId));
             }
         }
         return ApiResult.fail(400, "不支持的认证方式");
@@ -63,16 +69,21 @@ public class PortalApiController {
     /** 短信认证（发送验证码） */
     @PostMapping("/auth/sms/send")
     public ApiResult<Map<String, String>> sendSms(@RequestBody AuthRequest request) {
-        String code = smsService.sendVerifyCode(request.getPhone());
+        smsService.sendVerifyCode(request.getPhone());
         return ApiResult.ok(Map.of("phone", request.getPhone(), "sent", "验证码已发送"));
     }
 
     /** 短信认证（验证登录） */
     @PostMapping("/auth/sms")
-    public ApiResult<AuthResult> authBySms(@RequestBody AuthRequest request) {
+    public ApiResult<Map<String, Object>> authBySms(@RequestBody AuthRequest request) {
         for (AuthProvider provider : authProviders) {
             if (provider.getType().name().equals("SMS")) {
-                return ApiResult.ok(provider.authenticate(request));
+                AuthResult result = provider.authenticate(request);
+                if (!result.isSuccess()) {
+                    return ApiResult.fail(401, result.getMessage());
+                }
+                Long memberId = Long.parseLong(result.getUserId());
+                return ApiResult.ok(buildMemberInfo(memberId));
             }
         }
         return ApiResult.fail(400, "短信认证暂不可用");
@@ -80,13 +91,33 @@ public class PortalApiController {
 
     /** 充值卡认证 */
     @PostMapping("/auth/card")
-    public ApiResult<AuthResult> authByCard(@RequestBody AuthRequest request) {
+    public ApiResult<Map<String, Object>> authByCard(@RequestBody AuthRequest request) {
         for (AuthProvider provider : authProviders) {
             if (provider.getType().name().equals("CARD")) {
-                return ApiResult.ok(provider.authenticate(request));
+                AuthResult result = provider.authenticate(request);
+                if (!result.isSuccess()) {
+                    return ApiResult.fail(401, result.getMessage());
+                }
+                Long memberId = Long.parseLong(result.getUserId());
+                return ApiResult.ok(buildMemberInfo(memberId));
             }
         }
         return ApiResult.fail(400, "充值卡认证暂不可用");
+    }
+
+    /** 构建会员信息（安全：不返回密码） */
+    private Map<String, Object> buildMemberInfo(Long memberId) {
+        Member member = memberMapper.selectById(memberId);
+        if (member == null) return Map.of();
+        Map<String, Object> info = new HashMap<>();
+        info.put("memberId", member.getId());
+        info.put("username", member.getUsername());
+        info.put("realName", member.getRealName());
+        info.put("phone", member.getPhone());
+        info.put("balance", member.getBalance());
+        info.put("expireAt", member.getExpireAt());
+        info.put("status", member.getStatus());
+        return info;
     }
 
     // ===== 在线购买 =====
