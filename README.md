@@ -235,6 +235,102 @@ chmod +x build-installer.sh
 | `snmp_snapshot` | SNMP 监控快照 |
 | `shedlock` | 分布式任务锁 |
 
+## 内网设备管理方案
+
+### 问题
+公网服务器无法直接访问酒店内网的路由器和 AP（NAT/防火墙阻挡）。
+
+### 方案架构
+
+```
+公网服务器 (185.239.71.210)
+  │
+  ├─ DeviceRelayHandler  ←WebSocket→  内网 Agent (Linux盒子/RPi)
+  │  /ws/device                              │
+  │  /api/v1/devices/relay/*                  ├─ MikroTik REST API 代理
+  │                                           ├─ 局域网 ARP 扫描
+  │                                           └─ 心跳上报 + 命令执行
+  └─ 管理后台设备管理页面
+```
+
+### 方案 A：Agent 中继模式（内网/无公网IP）⭐推荐
+
+**Step 1 — 服务器端已就绪**
+
+服务器已自动监听 `/ws/device` WebSocket 端点，无需额外配置。
+
+**Step 2 — 内网部署 Agent**
+
+在内网任意 Linux 设备（树莓派/工控机/旧PC）上：
+
+```bash
+# 安装 Java 17+
+yum install -y java-17-openjdk-headless
+
+# 创建设备连接器
+cd /opt/hotel-wifi/hotel-wifi-platform/device-connector
+mvn clean package -DskipTests
+
+# 启动 Agent
+java -Xmx128m -Xms64m \
+  -Dserver=ws://185.239.71.210:8080/ws/device \
+  -DdeviceId=1 \
+  -DmikrotikHost=192.168.1.1 \
+  -DmikrotikPort=8728 \
+  -DmikrotikUser=admin \
+  -DmikrotikPassword=你的密码 \
+  -jar target/device-connector-1.0.0.jar
+```
+
+**Step 3 — 管理后台添加设备**
+
+1. 登录 http://185.239.71.210 → 设备管理 → 添加设备
+2. 填写设备名称、选择 **Agent 模式**
+3. Agent 连接成功后状态变为"在线"
+
+**Step 4 — 一键部署 (systemd 服务)**
+
+```bash
+cd /opt/hotel-wifi/hotel-wifi-platform
+bash mikrotik-scripts/deploy-agent.sh
+# 修改 connector.env 中的实际参数后重启
+systemctl restart hotel-connector
+```
+
+### 方案 B：IP 直连模式（有公网IP/端口映射）
+
+直接在管理后台 → 设备管理 → 添加设备，填写路由器公网 IP 和端口。服务器直接通过 MikroTik REST API 通信。
+
+### Agent 支持的命令
+
+| 命令 | 说明 |
+|------|------|
+| `mikrotik_get` | 代理 REST GET 请求 |
+| `mikrotik_post` | 代理 REST POST 请求 |
+| `mikrotik_hotspot_active` | 获取在线 Hotspot 用户 |
+| `scan_network` | 扫描局域网设备（ARP + DHCP） |
+| `disconnect_user` | 踢断指定用户 |
+| `ping` | 连通性测试 |
+
+### API 端点
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/api/v1/devices/relay/stats` | 在线 Agent 数量 |
+| GET | `/api/v1/devices/relay/{deviceId}/status` | 检查 Agent 在线状态 |
+| POST | `/api/v1/devices/relay/{deviceId}/command` | 下发命令 |
+| POST | `/api/v1/devices/relay/{deviceId}/scan` | 扫描局域网 |
+| POST | `/api/v1/devices/relay/{deviceId}/disconnect-user` | 踢断用户 |
+
+### MikroTik 一键配置
+
+WinBox → New Terminal → 粘贴 `mikrotik-scripts/setup-hotspot.rsc`，自动完成：
+- REST API 开启
+- Hotspot Server + IP 地址池 + NAT 配置
+- Walled Garden 白名单（Portal服务器/微信/支付宝）
+- 默认带宽限速（5M上行/10M下行）
+- SNMP 监控开启
+
 ## 计费模式说明
 
 | 模式 | 示例 | 扣费方式 |
@@ -310,6 +406,9 @@ bash hotel-wifi-platform/stress-test/run-stress-test.sh
 - **Phase 3 ✅ 已完成** (`999eb6f`) — RADIUS 协议对接（1812/1813）、SNMP 设备监控、MySQL 分区优化、Redis Cluster/Sentinel、jpackage 安装包、vue-i18n 中英双语、JMeter 压力测试
 - **Phase 4 ✅ 已完成** (`c2f60b3`) — Portal住客认证前端（8页面）+ 后端API、在线支付（微信/支付宝）、住客个人中心、CardAuthProvider
 - **部署 ✅ 已完成** (`1e98a87`) — Docker Compose 生产部署到 CentOS 7、SSH 密钥登录、演示服务器 http://185.239.71.210:8080
+- **安全 ✅ 已完成** (`b4d8836`) — 37项安全漏洞审计修复、SSH加固、防火墙、Redis密码、fail2ban
+- **Portal上线 ✅ 已完成** (`b6e7a36`) — 住客Portal部署到 /portal/、个人中心登录修复、测试会员数据
+- **Phase 5 ✅ 已完成** (`25da45e`) — 内网设备管理方案（Agent中继+IP直连）、WebSocket设备中继、DeviceConnector独立JAR、MikroTik自动配置脚本、Monnify支付集成文档
 
 ## 工作规则
 
