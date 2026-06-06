@@ -1,6 +1,7 @@
 package com.alenwifidata.core.billing.engine;
 
 import com.alenwifidata.common.constant.SystemConstants;
+import com.alenwifidata.common.exception.BusinessException;
 import com.alenwifidata.core.billing.mapper.BillingOrderMapper;
 import com.alenwifidata.core.billing.mapper.OnlineSessionMapper;
 import com.alenwifidata.core.billing.model.BillingDeduction;
@@ -49,16 +50,16 @@ public class BillingEngine {
         BillingPackage pkg = packageMapper.selectById(packageId);
 
         if (member == null || member.getStatus() != 1) {
-            throw new RuntimeException("会员不存在或已停用");
+            throw new BusinessException(400, "会员不存在或已停用");
         }
         if (pkg == null || pkg.getStatus() != 1) {
-            throw new RuntimeException("套餐不存在或已停用");
+            throw new BusinessException(400, "套餐不存在或已停用");
         }
 
         // 余额支付：检查余额
         if ("BALANCE".equals(payType)) {
             if (member.getBalance().compareTo(pkg.getPrice()) < 0) {
-                throw new RuntimeException("余额不足，需要 " + pkg.getPrice() + " 元，当前余额 " + member.getBalance() + " 元");
+                throw new BusinessException(402, "余额不足");
             }
             member.setBalance(member.getBalance().subtract(pkg.getPrice()));
             memberMapper.updateById(member);
@@ -111,7 +112,7 @@ public class BillingEngine {
 
         BillingPackage pkg = packageMapper.selectById(packageId);
         if (pkg != null && memberActiveCount >= pkg.getMaxDevices()) {
-            throw new RuntimeException("已达到最大同时在线设备数: " + pkg.getMaxDevices());
+            throw new BusinessException(429, "已达到最大同时在线设备数");
         }
 
         // 预扣首段费用到 Redis
@@ -146,7 +147,7 @@ public class BillingEngine {
     public OnlineSession endSession(Long sessionId, String reason) {
         OnlineSession session = sessionMapper.selectById(sessionId);
         if (session == null || !"ACTIVE".equals(session.getStatus())) {
-            throw new RuntimeException("会话不存在或已结束");
+            throw new BusinessException(404, "会话不存在或已结束");
         }
 
         session.setLogoutAt(LocalDateTime.now());

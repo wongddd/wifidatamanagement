@@ -10,13 +10,15 @@ export function useWebSocket(path: string) {
     const token = localStorage.getItem('token')
     if (!token) return
 
+    // 安全: Token 不在 URL 参数中传递，改为连接建立后发送第一条消息
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const url = `${protocol}//${location.host}${path}?token=${token}`
+    const url = `${protocol}//${location.host}${path}`
 
     ws = new WebSocket(url)
     ws.onopen = () => {
       connected.value = true
-      console.log('[WS] 已连接')
+      // 连接成功后通过消息发送 Token（不暴露在 URL/日志中）
+      ws?.send(JSON.stringify({ type: 'auth', token }))
     }
     ws.onmessage = (event) => {
       try {

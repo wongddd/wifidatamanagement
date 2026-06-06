@@ -53,9 +53,9 @@ springdoc:
   api-docs:
     path: /v3/api-docs
 
-# JWT 配置
+# JWT 配置（生产环境通过环境变量 JWT_SECRET 注入，此为开发默认值）
 jwt:
-  secret: Jw2qF8vL9xMzN4pR6sT7uVwXyZ1aB3cD5eF8gH0iJkLmNoPqRsTuVwXyZ
+  secret: ${JWT_SECRET:DevJwtSecret-ChangeInProduction}
   expiration: 86400000  # 24 小时
 
 # MikroTik 默认配置

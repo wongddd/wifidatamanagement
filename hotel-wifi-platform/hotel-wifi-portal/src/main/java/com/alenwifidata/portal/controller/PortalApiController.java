@@ -64,7 +64,7 @@ public class PortalApiController {
     @PostMapping("/auth/sms/send")
     public ApiResult<Map<String, String>> sendSms(@RequestBody AuthRequest request) {
         String code = smsService.sendVerifyCode(request.getPhone());
-        return ApiResult.ok(Map.of("phone", request.getPhone(), "code", code)); // code 仅调试返回，生产去掉
+        return ApiResult.ok(Map.of("phone", request.getPhone(), "sent", "验证码已发送"));
     }
 
     /** 短信认证（验证登录） */

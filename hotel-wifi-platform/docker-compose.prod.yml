@@ -6,13 +6,13 @@ services:
     container_name: hotel-wifi-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: HotelWifi@2026
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-SecureRoot@2026!}
       MYSQL_DATABASE: hotel_wifi
       MYSQL_USER: hotelwifi
-      MYSQL_PASSWORD: HotelWifi@2026
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-SecureApp@2026!}
       TZ: Asia/Shanghai
-    ports:
-      - "3306:3306"
+    expose:
+      - "3306"
     volumes:
       - mysql_data:/var/lib/mysql
     command:
@@ -22,7 +22,7 @@ services:
       - --innodb-buffer-pool-size=64M
       - --max-connections=100
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pHotelWifi@2026"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-SecureRoot@2026!}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -35,12 +35,13 @@ services:
     image: redis:7-alpine
     container_name: hotel-wifi-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    expose:
+      - "6379"
     volumes:
       - redis_data:/data
+    command: redis-server --requirepass ${REDIS_PASSWORD:-RedisWifi@2026.Secure}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-RedisWifi@2026.Secure}", "--no-auth-warning", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -56,16 +57,16 @@ services:
     image: hotel-wifi-api:latest
     container_name: hotel-wifi-api
     restart: unless-stopped
-    # ports 不暴露到公网，由 nginx 代理
     expose:
       - "8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       TZ: Asia/Shanghai
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/hotel_wifi?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      JWT_SECRET: ${JWT_SECRET:-Xk9mP3vL7sR2nQ8wY5aB1cD4eF6gH0jIkLmNpQsTuVwXyZ}
       SPRING_DATASOURCE_USERNAME: hotelwifi
-      SPRING_DATASOURCE_PASSWORD: HotelWifi@2026
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-SecureApp@2026!}
       SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-RedisWifi@2026.Secure}
       SPRING_FLYWAY_ENABLED: true
     depends_on:
       mysql:

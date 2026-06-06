@@ -1,5 +1,6 @@
 package com.alenwifidata.core.websocket;
 
+import com.alenwifidata.common.util.JwtUtil;
 import com.alenwifidata.core.billing.mapper.OnlineSessionMapper;
 import com.alenwifidata.core.billing.mapper.BillingDeductionMapper;
 import com.alenwifidata.core.tenant.TenantContext;
@@ -32,6 +33,7 @@ public class DashboardWebSocketHandler extends TextWebSocketHandler {
     private final OnlineSessionMapper sessionMapper;
     private final BillingDeductionMapper deductionMapper;
     private final ObjectMapper objectMapper;
+    private final JwtUtil jwtUtil;
 
     /** 连接池: tenantId -> sessions */
     private static final ConcurrentHashMap<Long, ConcurrentHashMap<String, WebSocketSession>> TENANT_SESSIONS = new ConcurrentHashMap<>();
@@ -43,6 +45,31 @@ public class DashboardWebSocketHandler extends TextWebSocketHandler {
             TENANT_SESSIONS.computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>())
                     .put(session.getId(), session);
             log.info("WebSocket 连接: sessionId={}, tenantId={}", session.getId(), tenantId);
+        } else {
+            // 等待客户端发送第一条 auth 消息（如果没用 URL 传 token）
+            session.getAttributes().put("authPending", true);
+        }
+    }
+
+    @Override
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) {
+        try {
+            String payload = message.getPayload();
+            if (payload.contains("\"type\":\"auth\"")) {
+                // 处理认证消息: { "type": "auth", "token": "xxx" }
+                var node = objectMapper.readTree(payload);
+                String token = node.get("token").asText();
+                if (token != null && jwtUtil.validateToken(token)) {
+                    Long tenantId = jwtUtil.getTenantId(token);
+                    session.getAttributes().put("tenantId", tenantId);
+                    session.getAttributes().remove("authPending");
+                    TENANT_SESSIONS.computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>())
+                            .put(session.getId(), session);
+                    log.info("WebSocket 消息认证成功: sessionId={}, tenantId={}", session.getId(), tenantId);
+                }
+            }
+        } catch (Exception e) {
+            log.debug("WebSocket 消息解析失败: {}", e.getMessage());
         }
     }
 
