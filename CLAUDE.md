@@ -11,3 +11,4 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **提交后操作**: 每次 Git 提交完成后，需要：
   1. 总结本次提交的工作日志（包含提交内容、变更文件、影响范围）。
   2. 同步更新远程仓库的 `README.md`，使其反映项目最新状态（新增功能、文件结构、使用说明等）。
+- **文件传输**: 向服务器传输文件时，必须使用 `rsync --progress` 或 `scp -v` 显示进度百分比，或先获取文件大小再在传输前后对比显示传输速率。不得静默传输大文件。
