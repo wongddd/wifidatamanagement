@@ -15,7 +15,6 @@
         <module>hotel-wifi-common</module>
         <module>hotel-wifi-core</module>
         <module>hotel-wifi-api</module>
-        <module>hotel-wifi-portal</module>
     </modules>
 
     <properties>
