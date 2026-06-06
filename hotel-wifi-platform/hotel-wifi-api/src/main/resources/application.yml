@@ -58,6 +58,14 @@ jwt:
   secret: ${JWT_SECRET:DevJwtSecret-ChangeInProduction}
   expiration: 86400000  # 24 小时
 
+# Monnify 支付配置
+payment:
+  monnify:
+    base-url: https://sandbox.monnify.com
+    api-key: ${MONNIFY_API_KEY:}
+    secret-key: ${MONNIFY_SECRET_KEY:}
+    contract-code: ${MONNIFY_CONTRACT_CODE:}
+
 # MikroTik 默认配置
 mikrotik:
   default-port: 8728

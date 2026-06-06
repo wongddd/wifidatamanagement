@@ -39,6 +39,7 @@ public class SecurityConfig {
                     "/api/v1/portal/**",
                     "/api/v1/payment/wechat/notify",
                     "/api/v1/payment/alipay/notify",
+                    "/api/v1/payment/monnify/**",
                     "/ws/**",
                     "/v3/api-docs/**",
                     "/doc.html",
