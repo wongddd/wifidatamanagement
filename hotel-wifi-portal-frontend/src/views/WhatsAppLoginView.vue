@@ -41,7 +41,7 @@ async function handleLogin() {
     if (res && res.memberId) {
       store.memberId = Number(res.memberId); store.memberInfo = res
       ElMessage.success('认证成功')
-      router.push(store.selectedPackage ? '/pay' : '/packages')
+      router.push('/my')
     } else { ElMessage.error('认证失败，请重试') }
   } catch (e: any) { ElMessage.error(e.message || '网络错误') }
   finally { loading.value = false }

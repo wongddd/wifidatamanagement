@@ -22,8 +22,9 @@ async function handleRedeem() {
   try {
     const res: any = await post('/card/redeem', form)
     store.memberId = res.memberId
+    store.memberInfo = { ...res, id: res.memberId }
     ElMessage.success(`充值成功！余额：¥${Number(res.balance).toFixed(2)}`)
-    router.push(store.selectedPackage ? '/pay' : '/success')
+    router.push('/my')
   } catch (e: any) {
     ElMessage.error(e.message || '核销失败')
   } finally { loading.value = false }

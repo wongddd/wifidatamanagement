@@ -22,12 +22,8 @@ async function handleLogin() {
     if (res && res.memberId) {
       store.memberId = Number(res.memberId)
       store.memberInfo = res
-      // 有选中套餐 → 去支付，否则 → 去选择套餐
-      if (store.selectedPackage) {
-        router.push('/pay')
-      } else {
-        router.push('/packages')
-      }
+      // 登录成功 → 去个人中心
+      router.push('/my')
     } else {
       ElMessage.error('认证失败：用户名或密码错误')
     }

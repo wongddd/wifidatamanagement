@@ -1,28 +1,43 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { get, post } from '@/api'
+import { usePortalStore } from '@/store/portal'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const store = usePortalStore()
 const loading = ref(false)
 const memberInfo = ref<any>(null)
 const searchForm = reactive({ phone: '', tenantId: 1 })
 const rechargeAmount = ref(100)
 const rechargeVisible = ref(false)
 
+// 如果已登录（store中有memberInfo），直接显示
+onMounted(() => {
+  if (store.memberInfo && store.memberId) {
+    memberInfo.value = store.memberInfo
+  }
+})
+
 async function searchByPhone() {
   if (!searchForm.phone) { ElMessage.warning('请输入手机号'); return }
   loading.value = true
-  try { memberInfo.value = await get(`/member/phone/${searchForm.phone}`, { tenantId: searchForm.tenantId }) }
-  catch { ElMessage.error('未找到该手机号的会员信息'); memberInfo.value = null }
+  try {
+    memberInfo.value = await get(`/member/phone/${searchForm.phone}`, { tenantId: searchForm.tenantId })
+    // 同步到 store，让个人中心记住登录状态
+    store.memberId = memberInfo.value?.id
+    store.memberInfo = memberInfo.value
+  } catch { ElMessage.error('未找到该手机号的会员信息'); memberInfo.value = null }
   finally { loading.value = false }
 }
 
 async function handleRecharge() {
+  const mId = store.memberId ?? memberInfo.value?.id
+  if (!mId) { ElMessage.error('请先登录'); return }
   try {
     await post('/payment/monnify/create', {
-      memberId: memberInfo.value?.id, packageId: 0,
+      memberId: mId, packageId: 0,
       customerName: memberInfo.value?.realName,
       customerEmail: (memberInfo.value?.phone || 'guest') + '@hotel.com',
     })
@@ -57,7 +72,10 @@ async function handleRecharge() {
           <el-button type="primary" style="flex:1" size="large" @click="rechargeVisible = true">💳 在线充值</el-button>
           <el-button style="flex:1" size="large" @click="router.push('/packages')">📦 购买套餐</el-button>
         </div>
-        <div style="text-align:center;margin-top:12px"><el-button link @click="memberInfo = null">← 切换账号</el-button></div>
+        <div style="text-align:center;margin-top:16px;display:flex;flex-direction:column;gap:8px">
+        <el-button link @click="memberInfo = null; store.memberInfo = null; store.memberId = null">← 切换账号</el-button>
+        <el-button link @click="router.push('/login')">🔑 账号密码登录</el-button>
+      </div>
       </div>
       <div style="text-align:center;margin-top:16px"><el-button link @click="router.push('/')">← 返回首页</el-button></div>
     </div>
