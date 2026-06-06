@@ -10,8 +10,8 @@ const userStore = useUserStore()
 const loading = ref(false)
 
 const form = reactive({
-  tenantId: 1,
-  username: 'admin',
+  tenantId: null as number | null,
+  username: '',
   password: '',
 })
 
@@ -73,8 +73,8 @@ async function handleLogin() {
         </el-button>
       </a>
 
-      <div style="text-align:center;margin-top:12px;font-size:12px;color:#909399">
-        管理员默认账号: admin / admin123
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:#c0c4cc">
+        请使用系统管理员分配的账号登录
       </div>
     </div>
   </div>
