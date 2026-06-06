@@ -1,8 +1,8 @@
-package com.alenwifidata.core.package.service;
+package com.alenwifidata.core.billingpackage.service;
 
 import com.alenwifidata.common.exception.BusinessException;
-import com.alenwifidata.core.package.mapper.BillingPackageMapper;
-import com.alenwifidata.core.package.model.BillingPackage;
+import com.alenwifidata.core.billingpackage.mapper.BillingPackageMapper;
+import com.alenwifidata.core.billingpackage.model.BillingPackage;
 import com.alenwifidata.core.tenant.TenantContext;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;

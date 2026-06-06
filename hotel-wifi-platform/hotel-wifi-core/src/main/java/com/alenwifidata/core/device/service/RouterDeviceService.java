@@ -16,11 +16,15 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class RouterDeviceService {
 
     private final RouterDeviceMapper deviceMapper;
     private final MikroTikClient mikroTikClient;
+
+    public RouterDeviceService(RouterDeviceMapper deviceMapper, MikroTikClient mikroTikClient) {
+        this.deviceMapper = deviceMapper;
+        this.mikroTikClient = mikroTikClient;
+    }
 
     public Page<RouterDevice> page(int pageNum, int pageSize, Long hotelId, String keyword) {
         Long tenantId = TenantContext.get();
@@ -76,7 +80,7 @@ public class RouterDeviceService {
      */
     public Map<String, Object> testConnection(Long id) {
         RouterDevice device = getById(id);
-        boolean connected = mikrotikClient.testConnection(device);
+        boolean connected = mikroTikClient.testConnection(device);
 
         // 更新状态
         device.setStatus(connected ? "ONLINE" : "ERROR");

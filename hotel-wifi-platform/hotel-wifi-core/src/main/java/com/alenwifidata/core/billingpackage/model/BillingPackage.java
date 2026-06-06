@@ -1,4 +1,4 @@
-package com.alenwifidata.core.package.model;
+package com.alenwifidata.core.billingpackage.model;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;

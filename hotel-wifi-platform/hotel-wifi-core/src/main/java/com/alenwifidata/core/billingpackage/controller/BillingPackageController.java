@@ -1,9 +1,9 @@
-package com.alenwifidata.core.package.controller;
+package com.alenwifidata.core.billingpackage.controller;
 
 import com.alenwifidata.common.dto.ApiResult;
 import com.alenwifidata.common.dto.PageReq;
-import com.alenwifidata.core.package.model.BillingPackage;
-import com.alenwifidata.core.package.service.BillingPackageService;
+import com.alenwifidata.core.billingpackage.model.BillingPackage;
+import com.alenwifidata.core.billingpackage.service.BillingPackageService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

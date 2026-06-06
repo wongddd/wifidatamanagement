@@ -1,0 +1,19 @@
+# 多阶段构建 - 生产环境（服务器内存有限，限制 Maven JVM）
+FROM maven:3.9-eclipse-temurin-17-alpine AS build
+ENV MAVEN_OPTS="-Xmx512m -XX:MaxMetaspaceSize=128m"
+WORKDIR /app
+COPY pom.xml .
+COPY hotel-wifi-common/pom.xml hotel-wifi-common/
+COPY hotel-wifi-core/pom.xml hotel-wifi-core/
+COPY hotel-wifi-api/pom.xml hotel-wifi-api/
+RUN mvn dependency:go-offline -B -q 2>/dev/null || true
+COPY . .
+RUN mvn clean package -DskipTests -pl hotel-wifi-api -am -q -Dmaven.compiler.fork=false
+
+FROM eclipse-temurin:17-jre-alpine
+RUN apk add --no-cache tzdata curl
+ENV TZ=Asia/Shanghai
+WORKDIR /app
+COPY --from=build /app/hotel-wifi-api/target/hotel-wifi-api-1.0.0-SNAPSHOT.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-Xmx512m", "-Xms256m", "-jar", "/app/app.jar"]

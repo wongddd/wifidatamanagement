@@ -1,6 +1,6 @@
-package com.alenwifidata.core.package.mapper;
+package com.alenwifidata.core.billingpackage.mapper;
 
-import com.alenwifidata.core.package.model.BillingPackage;
+import com.alenwifidata.core.billingpackage.model.BillingPackage;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
