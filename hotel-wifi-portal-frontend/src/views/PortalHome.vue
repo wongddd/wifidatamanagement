@@ -71,6 +71,16 @@ loadPackages()
           已有账号？查看个人中心
         </el-button>
       </div>
+
+      <el-divider style="margin:16px 0" />
+
+      <div style="text-align:center">
+        <a href="/" style="text-decoration:none">
+          <el-button link type="info" size="small">
+            🔧 管理员入口
+          </el-button>
+        </a>
+      </div>
     </div>
   </div>
 </template>

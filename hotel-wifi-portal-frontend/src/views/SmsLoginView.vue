@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { post } from '@/api'
+import { get, post } from '@/api'
 import { usePortalStore } from '@/store/portal'
 import { ElMessage } from 'element-plus'
 
@@ -37,15 +37,26 @@ async function handleLogin() {
   }
   loading.value = true
   try {
-    // 先查是否有此会员，无则自动注册
-    try {
-      await post('/auth/sms', { phone: form.phone, verifyCode: form.verifyCode, tenantId: form.tenantId, hotelId: form.hotelId })
-    } catch {
-      // 自动注册
-      await post('/member/register', { tenantId: form.tenantId, hotelId: form.hotelId, phone: form.phone })
+    // 先验证短信，无会员则自动注册
+    const res: any = await post('/auth/sms', {
+      phone: form.phone, verifyCode: form.verifyCode,
+      tenantId: form.tenantId, hotelId: form.hotelId
+    }).catch(async () => {
+      // 验证失败可能是会员不存在，自动注册
+      await post('/member/register', {
+        tenantId: form.tenantId, hotelId: form.hotelId, phone: form.phone
+      })
+      // 注册后直接查手机号获取会员信息
+      return await get(`/member/phone/${form.phone}`, { tenantId: form.tenantId })
+    })
+    if (res && res.memberId) {
+      store.memberId = Number(res.memberId)
+      store.memberInfo = res
+      ElMessage.success('认证成功')
+      router.push(store.selectedPackage ? '/pay' : '/packages')
+    } else {
+      ElMessage.error('认证失败，请重试')
     }
-    ElMessage.success('认证成功')
-    router.push(store.selectedPackage ? '/pay' : '/packages')
   } catch (e: any) {
     ElMessage.error(e.message || '认证失败')
   } finally { loading.value = false }

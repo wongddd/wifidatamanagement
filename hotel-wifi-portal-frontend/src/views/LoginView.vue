@@ -18,8 +18,9 @@ async function handleLogin() {
   loading.value = true
   try {
     const res: any = await post('/auth/username', form)
-    if (res.success) {
-      store.memberId = Number(res.userId)
+    // API返回 {memberId, username, realName, balance, phone, expireAt, status}
+    if (res && res.memberId) {
+      store.memberId = Number(res.memberId)
       store.memberInfo = res
       // 有选中套餐 → 去支付，否则 → 去选择套餐
       if (store.selectedPackage) {
@@ -28,7 +29,7 @@ async function handleLogin() {
         router.push('/packages')
       }
     } else {
-      ElMessage.error(res.message || '认证失败')
+      ElMessage.error('认证失败：用户名或密码错误')
     }
   } catch (e: any) {
     ElMessage.error(e.message || '网络错误')
