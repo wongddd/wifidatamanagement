@@ -41,7 +41,7 @@ async function handleLogin() {
 <template>
   <div class="login-container">
     <div class="login-card">
-      <h2>酒店WiFi管理计费系统</h2>
+      <h2>计费系统</h2>
       <p class="subtitle">Hotel WiFi Billing & Management</p>
 
       <el-alert v-if="errorMsg" :title="errorMsg" type="error" show-icon :closable="false" style="margin-bottom:16px" />
@@ -73,9 +73,7 @@ async function handleLogin() {
         </el-button>
       </a>
 
-      <div style="text-align:center;margin-top:12px;font-size:12px;color:#c0c4cc">
-        请使用系统管理员分配的账号登录
-      </div>
+
     </div>
   </div>
 </template>
