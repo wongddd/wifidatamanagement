@@ -1,13 +1,13 @@
 package com.alenwifidata.core.device.service;
 
 import com.alenwifidata.common.exception.BusinessException;
+import com.alenwifidata.core.device.client.DeviceClient;
+import com.alenwifidata.core.device.client.DeviceClientRegistry;
 import com.alenwifidata.core.device.mapper.RouterDeviceMapper;
-import com.alenwifidata.core.device.mikrotik.MikroTikClient;
 import com.alenwifidata.core.device.model.RouterDevice;
 import com.alenwifidata.core.tenant.TenantContext;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -19,11 +19,11 @@ import java.util.Map;
 public class RouterDeviceService {
 
     private final RouterDeviceMapper deviceMapper;
-    private final MikroTikClient mikroTikClient;
+    private final DeviceClientRegistry driverRegistry;
 
-    public RouterDeviceService(RouterDeviceMapper deviceMapper, MikroTikClient mikroTikClient) {
+    public RouterDeviceService(RouterDeviceMapper deviceMapper, DeviceClientRegistry driverRegistry) {
         this.deviceMapper = deviceMapper;
-        this.mikroTikClient = mikroTikClient;
+        this.driverRegistry = driverRegistry;
     }
 
     public Page<RouterDevice> page(int pageNum, int pageSize, Long hotelId, String keyword) {
@@ -55,6 +55,9 @@ public class RouterDeviceService {
         if (device.getApiPort() == null) {
             device.setApiPort(8728);
         }
+        if (device.getDeviceType() == null || device.getDeviceType().isBlank()) {
+            device.setDeviceType("MIKROTIK");
+        }
         // TODO: AES 加密密码
         deviceMapper.insert(device);
         return device;
@@ -62,7 +65,6 @@ public class RouterDeviceService {
 
     public RouterDevice update(RouterDevice device) {
         getById(device.getId());
-        // 如果密码变更，需要重新加密
         if (device.getApiPassword() != null) {
             // TODO: AES 加密密码
         }
@@ -76,18 +78,22 @@ public class RouterDeviceService {
     }
 
     /**
-     * 测试设备连接
+     * 测试设备连接 —— 通过 DeviceClient 驱动（支持多厂商）
      */
     public Map<String, Object> testConnection(Long id) {
         RouterDevice device = getById(id);
-        boolean connected = mikroTikClient.testConnection(device);
+        DeviceClient driver = driverRegistry.getDriver(device);
+        boolean connected = driver.testConnection(device);
 
-        // 更新状态
         device.setStatus(connected ? "ONLINE" : "ERROR");
         device.setLastHeartbeat(LocalDateTime.now());
         deviceMapper.updateById(device);
 
-        return Map.of("connected", connected, "status", device.getStatus());
+        return Map.of(
+                "connected", connected,
+                "status", device.getStatus(),
+                "driver", driver.driverName()
+        );
     }
 
     /**
@@ -95,10 +101,18 @@ public class RouterDeviceService {
      */
     public Map<String, Object> syncConfig(Long id) {
         RouterDevice device = getById(id);
-        // TODO: 同步 Hotspot Profile、Walled Garden 等配置
+        // TODO: 同步 Hotspot Profile、Walled Garden 等配置（通过 DeviceClient）
         device.setLastSyncAt(LocalDateTime.now());
         deviceMapper.updateById(device);
 
         return Map.of("success", true, "syncedAt", device.getLastSyncAt().toString());
+    }
+
+    /**
+     * 获取设备当前使用的驱动名称
+     */
+    public String getDriverName(Long id) {
+        RouterDevice device = getById(id);
+        return driverRegistry.getDriver(device).driverName();
     }
 }
