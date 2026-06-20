@@ -37,6 +37,7 @@ public class RADIUSClient implements DeviceClient {
     public boolean supports(String deviceType) {
         // RADIUS 驱动支持多种 deviceType 标记
         return "RADIUS".equalsIgnoreCase(deviceType)
+                || "IKUAI".equalsIgnoreCase(deviceType)
                 || "HUAWEI".equalsIgnoreCase(deviceType)
                 || "H3C".equalsIgnoreCase(deviceType)
                 || "CISCO".equalsIgnoreCase(deviceType)
