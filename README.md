@@ -409,6 +409,8 @@ bash hotel-wifi-platform/stress-test/run-stress-test.sh
 - **安全 ✅ 已完成** (`b4d8836`) — 37项安全漏洞审计修复、SSH加固、防火墙、Redis密码、fail2ban
 - **Portal上线 ✅ 已完成** (`b6e7a36`) — 住客Portal部署到 /portal/、个人中心登录修复、测试会员数据
 - **Phase 5 ✅ 已完成** (`25da45e`) — 内网设备管理方案（Agent中继+IP直连）、WebSocket设备中继、DeviceConnector独立JAR、MikroTik自动配置脚本、Monnify支付集成文档
+- **响应式适配 ✅ 已完成** (`17605bb`) — 16文件全局响应式：手机/平板/桌面自适应，侧栏抽屉+抽屉汉堡菜单，7列表页表格横向滚动
+- **Phase 8 📋 计划中** — 扩展更多设备类型：DeviceClient 抽象架构 + RADIUS 协议 + SNMP 监控 + UniFi/Omada/Meraki/Aruba/OpenWRT 单品驱动（详见 [使用说明书 §14](docs/使用说明书.md#14-扩展更多设备类型--可行性方案)）
 
 ## 工作规则
 
