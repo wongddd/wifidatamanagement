@@ -94,7 +94,8 @@ loadData()
     <template #header>
       <div class="card-header"><span>套餐管理</span><el-button type="primary" @click="handleCreate">新增套餐</el-button></div>
     </template>
-    <el-table :data="tableData" v-loading="loading" border stripe>
+    <div class="table-wrapper">
+      <el-table :data="tableData" v-loading="loading" border stripe>
       <el-table-column prop="packageName" label="套餐名称" min-width="140" />
       <el-table-column label="类型" width="90">
         <template #default="{ row }">
@@ -134,12 +135,14 @@ loadData()
         </template>
       </el-table-column>
     </el-table>
+    </div>
     <el-pagination v-model:current-page="page.pageNum" v-model:page-size="page.pageSize"
       :total="page.total" layout="total,prev,pager,next" @change="loadData"
+      :small="true"
       style="margin-top:16px;justify-content:flex-end" />
 
     <!-- 编辑弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑套餐' : '新增套餐'" width="560px">
+    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑套餐' : '新增套餐'" width="90%" style="max-width:560px">
       <el-form :model="form" label-width="100px">
         <el-form-item label="套餐名称"><el-input v-model="form.packageName" /></el-form-item>
         <el-form-item label="计费类型">

@@ -61,6 +61,10 @@ async function loadCharts() {
   } catch {}
 }
 
+function handleResize() {
+  revenueChart?.resize()
+}
+
 onMounted(() => {
   loadOverview()
   const revDom = document.getElementById('revenue-chart')
@@ -68,10 +72,12 @@ onMounted(() => {
     revenueChart = echarts.init(revDom)
     loadCharts()
   }
+  window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
   revenueChart?.dispose()
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -79,7 +85,7 @@ onUnmounted(() => {
   <div class="dashboard">
     <!-- 统计卡片 -->
     <el-row :gutter="20">
-      <el-col :span="6" v-for="item in stats" :key="item.title">
+      <el-col :xs="24" :sm="12" :md="12" :lg="6" v-for="item in stats" :key="item.title">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content">
             <div class="stat-info">
@@ -94,13 +100,13 @@ onUnmounted(() => {
 
     <!-- 图表区域 -->
     <el-row :gutter="20" style="margin-top: 20px">
-      <el-col :span="12">
+      <el-col :xs="24" :lg="12">
         <el-card shadow="hover">
           <template #header><span style="font-weight:600">近7天收入趋势</span></template>
           <div id="revenue-chart" style="height:320px"></div>
         </el-card>
       </el-col>
-      <el-col :span="12">
+      <el-col :xs="24" :lg="12">
         <el-card shadow="hover">
           <template #header><span style="font-weight:600">今日流量分布</span></template>
           <div style="height:320px;display:flex;align-items:center;justify-content:center;color:#909399">
@@ -125,4 +131,9 @@ onUnmounted(() => {
 .stat-card .stat-content { display:flex; align-items:center; justify-content:space-between; }
 .stat-card .stat-title { color:#909399; font-size:14px; margin:0 0 8px 0; }
 .stat-card .stat-value { font-size:24px; font-weight:bold; margin:0; }
+
+@media (max-width: 480px) {
+  .stat-card .stat-value { font-size: 20px; }
+  .stat-card .stat-title { font-size: 12px; margin: 0 0 4px 0; }
+}
 </style>

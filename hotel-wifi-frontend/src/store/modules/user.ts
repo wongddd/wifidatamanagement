@@ -5,9 +5,23 @@ import { login as loginApi, getMe, type LoginResult } from '@/api/modules/auth'
 export const useUserStore = defineStore('user', () => {
   const token = ref<string>(localStorage.getItem('token') || '')
   const userInfo = ref<LoginResult | null>(null)
+  const sidebarCollapsed = ref(false)
+  const mobileDrawerOpen = ref(false)
 
   const isLoggedIn = computed(() => !!token.value)
   const role = computed(() => userInfo.value?.role || '')
+
+  function toggleSidebar() {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  }
+
+  function toggleMobileDrawer() {
+    mobileDrawerOpen.value = !mobileDrawerOpen.value
+  }
+
+  function closeMobileDrawer() {
+    mobileDrawerOpen.value = false
+  }
 
   async function login(params: { tenantId: number; username: string; password: string }) {
     const result = await loginApi(params)
@@ -32,5 +46,10 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('token')
   }
 
-  return { token, userInfo, isLoggedIn, role, login, fetchUserInfo, logout }
+  return {
+    token, userInfo, isLoggedIn, role,
+    sidebarCollapsed, mobileDrawerOpen,
+    toggleSidebar, toggleMobileDrawer, closeMobileDrawer,
+    login, fetchUserInfo, logout,
+  }
 })

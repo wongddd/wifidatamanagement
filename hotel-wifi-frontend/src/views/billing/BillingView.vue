@@ -32,7 +32,8 @@ loadActiveSessions()
             <el-button type="primary" @click="loadActiveSessions">刷新</el-button>
           </div>
         </template>
-        <el-table :data="activeSessions" v-loading="loading" border stripe>
+        <div class="table-wrapper">
+          <el-table :data="activeSessions" v-loading="loading" border stripe>
           <el-table-column prop="id" label="会话ID" width="80" />
           <el-table-column prop="memberId" label="会员ID" width="80" />
           <el-table-column prop="macAddress" label="MAC地址" width="150" />
@@ -59,6 +60,7 @@ loadActiveSessions()
             </template>
           </el-table-column>
         </el-table>
+        </div>
       </el-card>
     </el-col>
   </el-row>

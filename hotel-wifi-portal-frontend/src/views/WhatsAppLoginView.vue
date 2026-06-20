@@ -58,9 +58,9 @@ async function handleLogin() {
           <el-input v-model="form.phone" placeholder="如 +8613800138000" size="large" />
         </el-form-item>
         <el-form-item label="验证码">
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
             <el-input v-model="form.verifyCode" placeholder="6位验证码" size="large" style="flex:1" />
-            <el-button type="primary" :disabled="countdown > 0" :loading="sending" @click="sendCode" style="width:130px">
+            <el-button type="primary" :disabled="countdown > 0" :loading="sending" @click="sendCode" style="min-width:110px;flex-shrink:0">
               {{ countdown > 0 ? countdown + 's' : '获取验证码' }}
             </el-button>
           </div>

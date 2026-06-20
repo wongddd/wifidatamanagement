@@ -75,8 +75,9 @@ loadData()
       </div>
     </template>
 
-    <el-table :data="tableData" v-loading="loading" border stripe>
-      <el-table-column prop="batchNo" label="批次号" width="160" />
+    <div class="table-wrapper">
+      <el-table :data="tableData" v-loading="loading" border stripe>
+        <el-table-column prop="batchNo" label="批次号" width="160" />
       <el-table-column prop="cardNo" label="卡号" width="180" />
       <el-table-column prop="amount" label="面值(元)" width="100" />
       <el-table-column label="类型" width="100">
@@ -102,12 +103,14 @@ loadData()
         </template>
       </el-table-column>
     </el-table>
+    </div>
     <el-pagination v-model:current-page="page.pageNum" v-model:page-size="page.pageSize"
       :total="page.total" layout="total,prev,pager,next" @change="loadData"
+      :small="true"
       style="margin-top:16px;justify-content:flex-end" />
 
     <!-- 批量生成弹窗 -->
-    <el-dialog v-model="generateVisible" title="批量生成充值卡" width="480px">
+    <el-dialog v-model="generateVisible" title="批量生成充值卡" width="90%" style="max-width:480px">
       <el-form :model="generateForm" label-width="100px">
         <el-form-item label="生成数量">
           <el-input-number v-model="generateForm.count" :min="1" :max="10000" style="width:100%" />
@@ -130,7 +133,7 @@ loadData()
     </el-dialog>
 
     <!-- 核销弹窗 -->
-    <el-dialog v-model="redeemVisible" title="核销充值卡" width="400px">
+    <el-dialog v-model="redeemVisible" title="核销充值卡" width="90%" style="max-width:400px">
       <el-form :model="redeemForm" label-width="80px">
         <el-form-item label="卡号"><el-input v-model="redeemForm.cardNo" /></el-form-item>
         <el-form-item label="密码"><el-input v-model="redeemForm.password" /></el-form-item>
@@ -143,7 +146,7 @@ loadData()
     </el-dialog>
 
     <!-- 生成结果展示 -->
-    <el-dialog v-if="generatedCards.length" :model-value="generatedCards.length > 0" @update:model-value="generatedCards = []" title="生成结果" width="600px">
+    <el-dialog v-if="generatedCards.length" :model-value="generatedCards.length > 0" @update:model-value="generatedCards = []" title="生成结果" width="90%" style="max-width:600px">
       <el-table :data="generatedCards" border stripe max-height="400">
         <el-table-column prop="cardNo" label="卡号" width="180" />
         <el-table-column prop="cardPassword" label="密码" width="120" />

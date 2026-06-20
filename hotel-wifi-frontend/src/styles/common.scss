@@ -1,3 +1,11 @@
+// 响应式 CSS 变量
+:root {
+  --sidebar-width: 220px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 60px;
+  --header-height-mobile: 48px;
+}
+
 // 全局样式
 * {
   margin: 0;
@@ -27,4 +35,23 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+// 表格横向滚动包装
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+// 弹窗内表单适配小屏
+@media (max-width: 480px) {
+  .el-dialog {
+    margin-top: 5vh !important;
+  }
+  .el-pagination {
+    justify-content: center !important;
+  }
 }

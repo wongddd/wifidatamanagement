@@ -85,9 +85,11 @@ async function handleLogin() {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  padding: 16px;
 }
 .login-card {
-  width: 420px;
+  width: 100%;
+  max-width: 400px;
   padding: 40px;
   background: #fff;
   border-radius: 8px;
@@ -103,5 +105,27 @@ async function handleLogin() {
   color: #909399;
   margin-bottom: 24px;
   font-size: 13px;
+}
+
+/* 小屏手机适配 */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 0;
+    align-items: flex-start;
+  }
+  .login-card {
+    max-width: 100%;
+    min-height: 100vh;
+    border-radius: 0;
+    padding: 40px 20px 24px;
+    box-shadow: none;
+  }
+  .login-card h2 {
+    font-size: 22px;
+  }
+  .subtitle {
+    font-size: 12px;
+    margin-bottom: 20px;
+  }
 }
 </style>

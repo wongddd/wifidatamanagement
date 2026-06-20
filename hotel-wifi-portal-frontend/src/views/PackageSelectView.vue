@@ -48,7 +48,7 @@ onMounted(loadPackages)
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
             <p style="font-weight:600;font-size:15px;margin-bottom:4px">{{ item.packageName }}</p>
-            <p style="font-size:12px;color:#909399">
+            <p style="font-size:12px;color:#909399;display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px">
               <el-tag size="small" :type="item.billingType === 'TIME' ? 'primary' : 'warning'">
                 {{ item.billingType === 'TIME' ? '包时' : item.billingType === 'TRAFFIC' ? '包流量' : '混合' }}
               </el-tag>
