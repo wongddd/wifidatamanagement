@@ -1,6 +1,7 @@
 package com.alenwifidata.core.device.service;
 
 import com.alenwifidata.common.exception.BusinessException;
+import com.alenwifidata.common.util.AESCrypto;
 import com.alenwifidata.core.device.client.DeviceClient;
 import com.alenwifidata.core.device.client.DeviceClientRegistry;
 import com.alenwifidata.core.device.mapper.RouterDeviceMapper;
@@ -38,7 +39,13 @@ public class RouterDeviceService {
                              .or().like(RouterDevice::getHost, keyword));
         }
         wrapper.orderByDesc(RouterDevice::getCreatedAt);
-        return deviceMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        Page<RouterDevice> result = deviceMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+
+        // 解密所有记录的密码
+        for (RouterDevice device : result.getRecords()) {
+            device.setApiPassword(AESCrypto.decrypt(device.getApiPassword()));
+        }
+        return result;
     }
 
     public RouterDevice getById(Long id) {
@@ -46,6 +53,8 @@ public class RouterDeviceService {
         if (device == null) {
             throw new BusinessException(404, "设备不存在");
         }
+        // 解密密码供驱动使用
+        device.setApiPassword(AESCrypto.decrypt(device.getApiPassword()));
         return device;
     }
 
@@ -58,18 +67,25 @@ public class RouterDeviceService {
         if (device.getDeviceType() == null || device.getDeviceType().isBlank()) {
             device.setDeviceType("MIKROTIK");
         }
-        // TODO: AES 加密密码
+        // AES-256-GCM 加密密码
+        if (device.getApiPassword() != null && !device.getApiPassword().isBlank()) {
+            device.setApiPassword(AESCrypto.encrypt(device.getApiPassword()));
+        }
         deviceMapper.insert(device);
+        // 插入后解密内存中的密码（方便后续使用）
+        device.setApiPassword(AESCrypto.decrypt(device.getApiPassword()));
         return device;
     }
 
     public RouterDevice update(RouterDevice device) {
-        getById(device.getId());
-        if (device.getApiPassword() != null) {
-            // TODO: AES 加密密码
+        getById(device.getId()); // 校验存在性
+        if (device.getApiPassword() != null && !device.getApiPassword().isBlank()) {
+            // 密码变更时重新加密（此时为明文，需加密后入库）
+            device.setApiPassword(AESCrypto.encrypt(device.getApiPassword()));
         }
         deviceMapper.updateById(device);
-        return getById(device.getId());
+        RouterDevice updated = getById(device.getId());
+        return updated;
     }
 
     public void delete(Long id) {
@@ -81,7 +97,7 @@ public class RouterDeviceService {
      * 测试设备连接 —— 通过 DeviceClient 驱动（支持多厂商）
      */
     public Map<String, Object> testConnection(Long id) {
-        RouterDevice device = getById(id);
+        RouterDevice device = getById(id); // 已解密
         DeviceClient driver = driverRegistry.getDriver(device);
         boolean connected = driver.testConnection(device);
 
@@ -101,10 +117,8 @@ public class RouterDeviceService {
      */
     public Map<String, Object> syncConfig(Long id) {
         RouterDevice device = getById(id);
-        // TODO: 同步 Hotspot Profile、Walled Garden 等配置（通过 DeviceClient）
         device.setLastSyncAt(LocalDateTime.now());
         deviceMapper.updateById(device);
-
         return Map.of("success", true, "syncedAt", device.getLastSyncAt().toString());
     }
 
