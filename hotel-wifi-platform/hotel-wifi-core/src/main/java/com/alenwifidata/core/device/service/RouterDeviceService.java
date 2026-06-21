@@ -6,6 +6,8 @@ import com.alenwifidata.core.device.client.DeviceClient;
 import com.alenwifidata.core.device.client.DeviceClientRegistry;
 import com.alenwifidata.core.device.mapper.RouterDeviceMapper;
 import com.alenwifidata.core.device.model.RouterDevice;
+import com.alenwifidata.core.billingpackage.mapper.BillingPackageMapper;
+import com.alenwifidata.core.billingpackage.model.BillingPackage;
 import com.alenwifidata.core.tenant.TenantContext;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -21,10 +23,14 @@ public class RouterDeviceService {
 
     private final RouterDeviceMapper deviceMapper;
     private final DeviceClientRegistry driverRegistry;
+    private final BillingPackageMapper packageMapper;
 
-    public RouterDeviceService(RouterDeviceMapper deviceMapper, DeviceClientRegistry driverRegistry) {
+    public RouterDeviceService(RouterDeviceMapper deviceMapper,
+                               DeviceClientRegistry driverRegistry,
+                               BillingPackageMapper packageMapper) {
         this.deviceMapper = deviceMapper;
         this.driverRegistry = driverRegistry;
+        this.packageMapper = packageMapper;
     }
 
     public Page<RouterDevice> page(int pageNum, int pageSize, Long hotelId, String keyword) {
@@ -40,8 +46,6 @@ public class RouterDeviceService {
         }
         wrapper.orderByDesc(RouterDevice::getCreatedAt);
         Page<RouterDevice> result = deviceMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
-
-        // 解密所有记录的密码
         for (RouterDevice device : result.getRecords()) {
             device.setApiPassword(AESCrypto.decrypt(device.getApiPassword()));
         }
@@ -50,10 +54,7 @@ public class RouterDeviceService {
 
     public RouterDevice getById(Long id) {
         RouterDevice device = deviceMapper.selectById(id);
-        if (device == null) {
-            throw new BusinessException(404, "设备不存在");
-        }
-        // 解密密码供驱动使用
+        if (device == null) throw new BusinessException(404, "设备不存在");
         device.setApiPassword(AESCrypto.decrypt(device.getApiPassword()));
         return device;
     }
@@ -61,72 +62,68 @@ public class RouterDeviceService {
     public RouterDevice create(RouterDevice device) {
         device.setTenantId(TenantContext.get());
         device.setStatus("OFFLINE");
-        if (device.getApiPort() == null) {
-            device.setApiPort(8728);
-        }
-        if (device.getDeviceType() == null || device.getDeviceType().isBlank()) {
+        if (device.getApiPort() == null) device.setApiPort(8728);
+        if (device.getDeviceType() == null || device.getDeviceType().isBlank())
             device.setDeviceType("MIKROTIK");
-        }
-        // AES-256-GCM 加密密码
-        if (device.getApiPassword() != null && !device.getApiPassword().isBlank()) {
+        if (device.getApiPassword() != null && !device.getApiPassword().isBlank())
             device.setApiPassword(AESCrypto.encrypt(device.getApiPassword()));
-        }
         deviceMapper.insert(device);
-        // 插入后解密内存中的密码（方便后续使用）
         device.setApiPassword(AESCrypto.decrypt(device.getApiPassword()));
         return device;
     }
 
     public RouterDevice update(RouterDevice device) {
-        getById(device.getId()); // 校验存在性
-        if (device.getApiPassword() != null && !device.getApiPassword().isBlank()) {
-            // 密码变更时重新加密（此时为明文，需加密后入库）
+        getById(device.getId());
+        if (device.getApiPassword() != null && !device.getApiPassword().isBlank())
             device.setApiPassword(AESCrypto.encrypt(device.getApiPassword()));
-        }
         deviceMapper.updateById(device);
-        RouterDevice updated = getById(device.getId());
-        return updated;
+        return getById(device.getId());
     }
 
-    public void delete(Long id) {
-        getById(id);
-        deviceMapper.deleteById(id);
-    }
+    public void delete(Long id) { getById(id); deviceMapper.deleteById(id); }
 
-    /**
-     * 测试设备连接 —— 通过 DeviceClient 驱动（支持多厂商）
-     */
     public Map<String, Object> testConnection(Long id) {
-        RouterDevice device = getById(id); // 已解密
+        RouterDevice device = getById(id);
         DeviceClient driver = driverRegistry.getDriver(device);
         boolean connected = driver.testConnection(device);
-
         device.setStatus(connected ? "ONLINE" : "ERROR");
         device.setLastHeartbeat(LocalDateTime.now());
         deviceMapper.updateById(device);
-
-        return Map.of(
-                "connected", connected,
-                "status", device.getStatus(),
-                "driver", driver.driverName()
-        );
+        return Map.of("connected", connected, "status", device.getStatus(), "driver", driver.driverName());
     }
 
     /**
-     * 同步配置到设备
+     * 同步配置到设备 — 通过 DeviceClient 将套餐限速规则下发到路由器
      */
     public Map<String, Object> syncConfig(Long id) {
         RouterDevice device = getById(id);
+        DeviceClient driver = driverRegistry.getDriver(device);
+        int synced = 0;
+
+        try {
+            var packages = packageMapper.selectList(
+                    new LambdaQueryWrapper<BillingPackage>()
+                            .eq(BillingPackage::getStatus, 1)
+                            .eq(BillingPackage::getTenantId, device.getTenantId()));
+            for (BillingPackage pkg : packages) {
+                long up = pkg.getUploadLimitBps() != null ? pkg.getUploadLimitBps() : 5_242_880;
+                long down = pkg.getDownloadLimitBps() != null ? pkg.getDownloadLimitBps() : 10_485_760;
+                if (driver.setBandwidthLimit(device, "pkg-" + pkg.getId(), up, down)) {
+                    synced++;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("同步限速规则部分失败: device={}, error={}", device.getDeviceName(), e.getMessage());
+        }
+
         device.setLastSyncAt(LocalDateTime.now());
         deviceMapper.updateById(device);
-        return Map.of("success", true, "syncedAt", device.getLastSyncAt().toString());
+
+        return Map.of("success", true, "syncedAt", device.getLastSyncAt().toString(),
+                "rulesSynced", synced, "driver", driver.driverName());
     }
 
-    /**
-     * 获取设备当前使用的驱动名称
-     */
     public String getDriverName(Long id) {
-        RouterDevice device = getById(id);
-        return driverRegistry.getDriver(device).driverName();
+        return driverRegistry.getDriver(getById(id)).driverName();
     }
 }

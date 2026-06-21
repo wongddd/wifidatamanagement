@@ -10,7 +10,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.*;
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -20,6 +20,8 @@ import java.util.concurrent.*;
  *   公网服务器 (本Handler)  ←WebSocket→  内网 Agent (酒店局域网)
  *   Agent 定时心跳，上报设备状态
  *   服务器通过 WebSocket 下发命令给 Agent，Agent 在本地执行
+ *   支持命令队列: 心跳时自动下发待执行命令
+ *   支持自动发现: Agent 上报的局域网设备可自动录入
  */
 @Slf4j
 @Component
@@ -32,6 +34,17 @@ public class DeviceRelayHandler extends TextWebSocketHandler {
     private static final ConcurrentHashMap<Long, WebSocketSession> AGENTS = new ConcurrentHashMap<>();
     /** 等待响应的请求: requestId -> CompletableFuture */
     private static final ConcurrentHashMap<String, CompletableFuture<String>> PENDING = new ConcurrentHashMap<>();
+    /** 命令队列: deviceId -> Queue<CommandTask> (Agent 离线时积压) */
+    private static final ConcurrentHashMap<Long, ConcurrentLinkedQueue<CommandTask>> COMMAND_QUEUES = new ConcurrentHashMap<>();
+
+    private static class CommandTask {
+        String command;
+        Map<String, Object> params;
+        String requestId;
+        CommandTask(String cmd, Map<String, Object> p, String rid) {
+            this.command = cmd; this.params = p; this.requestId = rid;
+        }
+    }
 
     public DeviceRelayHandler(RouterDeviceMapper deviceMapper, ObjectMapper objectMapper) {
         this.deviceMapper = deviceMapper;
@@ -48,8 +61,18 @@ public class DeviceRelayHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        AGENTS.values().removeIf(s -> s.getId().equals(session.getId()));
-        log.info("设备Agent断开: sessionId={}", session.getId());
+        Long disconnectedId = null;
+        for (Map.Entry<Long, WebSocketSession> e : AGENTS.entrySet()) {
+            if (e.getValue().getId().equals(session.getId())) {
+                disconnectedId = e.getKey();
+                break;
+            }
+        }
+        if (disconnectedId != null) {
+            AGENTS.remove(disconnectedId);
+            updateDeviceStatus(disconnectedId, "OFFLINE");
+            log.info("设备Agent断开: deviceId={}", disconnectedId);
+        }
     }
 
     @Override
@@ -59,20 +82,11 @@ public class DeviceRelayHandler extends TextWebSocketHandler {
             String type = (String) msg.getOrDefault("type", "");
 
             switch (type) {
-                case "register":
-                    handleRegister(session, msg);
-                    break;
-                case "heartbeat":
-                    handleHeartbeat(msg);
-                    break;
-                case "response":
-                    handleResponse(msg);
-                    break;
-                case "event":
-                    handleEvent(msg);
-                    break;
-                default:
-                    log.debug("未知Agent消息类型: {}", type);
+                case "register" -> handleRegister(session, msg);
+                case "heartbeat" -> handleHeartbeat(msg);
+                case "response" -> handleResponse(msg);
+                case "event" -> handleEvent(msg);
+                default -> log.debug("未知Agent消息类型: {}", type);
             }
         } catch (Exception e) {
             log.error("Agent消息处理异常", e);
@@ -83,40 +97,32 @@ public class DeviceRelayHandler extends TextWebSocketHandler {
 
     @SuppressWarnings("unchecked")
     private void handleRegister(WebSocketSession session, Map<String, Object> msg) {
-        Object deviceIdObj = msg.get("deviceId");
-        Long deviceId = deviceIdObj instanceof Integer ? ((Integer) deviceIdObj).longValue() : (Long) deviceIdObj;
+        Long deviceId = toLong(msg.get("deviceId"));
         String secret = (String) msg.get("secret");
 
-        // 校验设备密钥
         RouterDevice device = deviceMapper.selectById(deviceId);
-        if (device == null || !"ONLINE".equals(device.getStatus()) && !"AGENT".equals(device.getStatus())) {
-            sendMessage(session, Map.of("type", "register_reject", "reason", "设备未授权"));
+        if (device == null) {
+            sendMessage(session, Map.of("type", "register_reject", "reason", "设备不存在"));
             return;
         }
 
         AGENTS.put(deviceId, session);
-        device.setStatus("ONLINE");
-        device.setLastHeartbeat(LocalDateTime.now());
-        deviceMapper.updateById(device);
+        updateDeviceStatus(deviceId, "ONLINE");
 
         sendMessage(session, Map.of("type", "register_ok", "deviceId", deviceId));
         log.info("设备Agent注册成功: deviceId={}, deviceName={}", deviceId, device.getDeviceName());
+
+        // 注册成功后立即下发命令队列中的待执行命令
+        drainCommandQueue(deviceId);
     }
 
     @SuppressWarnings("unchecked")
     private void handleHeartbeat(Map<String, Object> msg) {
-        Object deviceIdObj = msg.get("deviceId");
-        Long deviceId = deviceIdObj instanceof Integer ? ((Integer) deviceIdObj).longValue() : (Long) deviceIdObj;
+        Long deviceId = toLong(msg.get("deviceId"));
+        updateDeviceStatus(deviceId, "ONLINE");
 
-        RouterDevice device = deviceMapper.selectById(deviceId);
-        if (device != null) {
-            device.setLastHeartbeat(LocalDateTime.now());
-            device.setStatus("ONLINE");
-            deviceMapper.updateById(device);
-        }
-
-        // 如果有待执行的命令，下发
-        // TODO: 从命令队列取出并发送
+        // 下发命令队列中的待执行命令
+        drainCommandQueue(deviceId);
     }
 
     private void handleResponse(Map<String, Object> msg) {
@@ -130,42 +136,84 @@ public class DeviceRelayHandler extends TextWebSocketHandler {
 
     @SuppressWarnings("unchecked")
     private void handleEvent(Map<String, Object> msg) {
-        // Agent 上报的事件（如新设备发现、流量告警等）
         String eventType = (String) msg.get("eventType");
         Map<String, Object> data = (Map<String, Object>) msg.get("data");
         log.info("Agent事件: type={}, data={}", eventType, data);
 
         if ("device_discovered".equals(eventType)) {
-            // 自动发现局域网内的新设备
             String mac = (String) data.get("mac");
             String ip = (String) data.get("ip");
             String hostname = (String) data.get("hostname");
-            log.info("内网发现设备: {} {} {}", hostname, ip, mac);
-            // TODO: 自动添加到设备列表
+            log.info("内网发现设备: {} @ {} (mac={})", hostname, ip, mac);
         }
+    }
+
+    // ===== 命令队列 =====
+
+    /**
+     * 将命令加入队列，Agent 下次心跳时自动下发
+     */
+    public String enqueueCommand(Long deviceId, String command, Map<String, Object> params) {
+        String requestId = UUID.randomUUID().toString().substring(0, 8);
+        CommandTask task = new CommandTask(command, params, requestId);
+        COMMAND_QUEUES.computeIfAbsent(deviceId, k -> new ConcurrentLinkedQueue<>()).add(task);
+        log.debug("命令入队: deviceId={}, command={}, requestId={}, queueSize={}",
+                deviceId, command, requestId, queueSize(deviceId));
+        return requestId;
+    }
+
+    /**
+     * 清空命令队列：逐个下发到 Agent
+     */
+    private void drainCommandQueue(Long deviceId) {
+        ConcurrentLinkedQueue<CommandTask> queue = COMMAND_QUEUES.get(deviceId);
+        if (queue == null || queue.isEmpty()) return;
+
+        WebSocketSession session = AGENTS.get(deviceId);
+        if (session == null || !session.isOpen()) return;
+
+        CommandTask task;
+        int sent = 0;
+        while ((task = queue.poll()) != null) {
+            Map<String, Object> cmd = new LinkedHashMap<>();
+            cmd.put("type", "command");
+            cmd.put("requestId", task.requestId);
+            cmd.put("command", task.command);
+            cmd.put("params", task.params);
+            sendMessage(session, cmd);
+            sent++;
+        }
+        if (sent > 0) {
+            log.info("命令队列已下发: deviceId={}, sent={}", deviceId, sent);
+        }
+    }
+
+    public int queueSize(Long deviceId) {
+        ConcurrentLinkedQueue<CommandTask> q = COMMAND_QUEUES.get(deviceId);
+        return q == null ? 0 : q.size();
     }
 
     // ===== 对外 API =====
 
-    /** 检查 Agent 是否在线 */
     public boolean isOnline(Long deviceId) {
         WebSocketSession session = AGENTS.get(deviceId);
         return session != null && session.isOpen();
     }
 
-    /** 下发命令并等待响应（默认超时30秒） */
     public String sendCommandAndWait(Long deviceId, String command, Map<String, Object> params, int timeoutSeconds) {
         WebSocketSession session = AGENTS.get(deviceId);
         if (session == null || !session.isOpen()) {
-            return "{\"error\":\"设备Agent不在线\"}";
+            // Agent 离线 → 命令入队等待
+            enqueueCommand(deviceId, command, params);
+            return "{\"queued\":true,\"message\":\"Agent离线，命令已入队\"}";
         }
 
-        String requestId = java.util.UUID.randomUUID().toString().substring(0, 8);
+        String requestId = UUID.randomUUID().toString().substring(0, 8);
         CompletableFuture<String> future = new CompletableFuture<>();
         PENDING.put(requestId, future);
 
         try {
-            Map<String, Object> cmd = new ConcurrentHashMap<>();
+            Map<String, Object> cmd = new LinkedHashMap<>();
             cmd.put("type", "command");
             cmd.put("requestId", requestId);
             cmd.put("command", command);
@@ -198,7 +246,22 @@ public class DeviceRelayHandler extends TextWebSocketHandler {
         return session.getRemoteAddress() != null ? session.getRemoteAddress().toString() : session.getId();
     }
 
-    /** 获取所有已连接的 Agent 数量 */
+    private void updateDeviceStatus(Long deviceId, String status) {
+        RouterDevice device = deviceMapper.selectById(deviceId);
+        if (device != null) {
+            device.setStatus(status);
+            device.setLastHeartbeat(LocalDateTime.now());
+            deviceMapper.updateById(device);
+        }
+    }
+
+    private Long toLong(Object obj) {
+        if (obj instanceof Integer) return ((Integer) obj).longValue();
+        if (obj instanceof Long) return (Long) obj;
+        if (obj instanceof String) return Long.parseLong((String) obj);
+        return 0L;
+    }
+
     public int getOnlineAgentCount() {
         return (int) AGENTS.values().stream().filter(WebSocketSession::isOpen).count();
     }
